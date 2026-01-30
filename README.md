@@ -8,6 +8,8 @@ A Claude Code skill for controlling Android devices via ADB. Uses Claude as the 
 npx skills add https://github.com/shehbajdhillon/android-use
 ```
 
+Or just link this repo to your agent and let it figure it out.
+
 ## Prerequisites
 
 - **ADB** installed and in your PATH ([Android SDK Platform Tools](https://developer.android.com/tools/releases/platform-tools))
