@@ -104,6 +104,7 @@ All scripts are in the `scripts/` directory. Run them via bash.
 | Script | Args | Description |
 |--------|------|-------------|
 | `check-device.sh` | `[-s serial]` | List devices / verify connection |
+| `wake.sh` | `[-s serial]` | Wake device and dismiss lock screen |
 | `screenshot.sh` | `[-s serial]` | Capture screen image |
 
 ### Screen Reading
@@ -152,6 +153,12 @@ All scripts are in the `scripts/` directory. Run them via bash.
 - For visual debugging when XML doesn't capture enough info
 - To verify visual state (colors, images, etc.)
 - When the task requires visual confirmation
+
+### When to wake the device
+- Before starting any task (device may have gone to sleep)
+- If `get-screen.sh` returns empty or minimal XML
+- If actions don't seem to be working (screen may be off)
+- Note: Won't bypass PIN/pattern/password - user must unlock manually
 
 ## Common Patterns
 

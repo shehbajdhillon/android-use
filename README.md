@@ -43,6 +43,7 @@ All scripts support targeting specific devices with `-s <serial>`. When multiple
 | Script | Description |
 |--------|-------------|
 | `check-device.sh` | List connected devices / verify connection |
+| `wake.sh` | Wake device and dismiss lock screen |
 | `get-screen.sh` | Dump UI accessibility tree (XML) |
 | `tap.sh` | Tap at x,y coordinates |
 | `type-text.sh` | Type text string |
