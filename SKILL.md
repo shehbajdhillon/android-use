@@ -14,15 +14,57 @@ This skill enables you to control Android devices connected via ADB (Android Deb
 - ADB installed and accessible in PATH
 - Device authorized for debugging (accepted the "Allow USB debugging?" prompt)
 
+## Multi-Device Support
+
+All scripts support the `-s <serial>` flag to target a specific device. This is essential when multiple devices are connected (e.g., a physical phone AND an emulator).
+
+### Identifying Devices
+
+Run `scripts/check-device.sh` to see all connected devices:
+
+```
+Multiple devices connected (2):
+
+  [PHYSICAL] 1A051FDF6007PA - Pixel 6
+  [EMULATOR] emulator-5554 - sdk_gphone64_arm64
+
+Use -s <serial> to specify which device to use.
+```
+
+### Choosing the Right Device
+
+When the user mentions:
+- **"phone"**, **"my phone"**, **"physical device"** → Use the `[PHYSICAL]` device
+- **"emulator"**, **"virtual device"**, **"AVD"** → Use the `[EMULATOR]` device
+- If unclear, **ask the user** which device they want to target
+
+### Using the Serial Flag
+
+Once you identify the target device, pass `-s <serial>` to ALL subsequent scripts:
+
+```bash
+# Check specific device
+scripts/check-device.sh -s 1A051FDF6007PA
+
+# All actions on that device
+scripts/get-screen.sh -s 1A051FDF6007PA
+scripts/tap.sh -s 1A051FDF6007PA 540 960
+scripts/launch-app.sh -s 1A051FDF6007PA chrome
+```
+
+**Important:** Be consistent - use the same serial for all commands in a session.
+
 ## Core Workflow
 
 When given a task, follow this perception-action loop:
 
 1. **Check device connection** - Run `scripts/check-device.sh` first
-2. **Get current screen state** - Run `scripts/get-screen.sh` to dump UI hierarchy
+   - If multiple devices: identify target based on user intent or ask
+   - Note the serial number for subsequent commands
+2. **Get current screen state** - Run `scripts/get-screen.sh [-s serial]` to dump UI hierarchy
 3. **Analyze the XML** - Read the accessibility tree to understand what's on screen
 4. **Decide next action** - Based on goal + current state, choose an action
-5. **Execute action** - Run the appropriate script
+5. **Execute action** - Run the appropriate script with `-s serial` if needed
 6. **Wait briefly** - Allow UI to update (typically 500ms-1s)
 7. **Repeat** - Go back to step 2 until goal is achieved
 
@@ -54,32 +96,34 @@ Example: `bounds="[42,234][1038,345]"` → tap at x=540, y=289
 
 ## Available Scripts
 
-All scripts are in the `scripts/` directory. Run them via bash:
+All scripts are in the `scripts/` directory. Run them via bash.
+
+**All scripts support `-s <serial>` to target a specific device.**
 
 ### Device Management
 | Script | Args | Description |
 |--------|------|-------------|
-| `check-device.sh` | none | Verify ADB connection |
-| `screenshot.sh` | none | Capture screen image |
+| `check-device.sh` | `[-s serial]` | List devices / verify connection |
+| `screenshot.sh` | `[-s serial]` | Capture screen image |
 
 ### Screen Reading
 | Script | Args | Description |
 |--------|------|-------------|
-| `get-screen.sh` | none | Dump UI accessibility tree |
+| `get-screen.sh` | `[-s serial]` | Dump UI accessibility tree |
 
 ### Input Actions
 | Script | Args | Description |
 |--------|------|-------------|
-| `tap.sh` | `x y` | Tap at coordinates |
-| `type-text.sh` | `"text"` | Type text string |
-| `swipe.sh` | `direction` | Swipe up/down/left/right |
-| `key.sh` | `keyname` | Press key (home/back/enter/recent) |
+| `tap.sh` | `[-s serial] x y` | Tap at coordinates |
+| `type-text.sh` | `[-s serial] "text"` | Type text string |
+| `swipe.sh` | `[-s serial] direction` | Swipe up/down/left/right |
+| `key.sh` | `[-s serial] keyname` | Press key (home/back/enter/recent) |
 
 ### App Management
 | Script | Args | Description |
 |--------|------|-------------|
-| `launch-app.sh` | `package_or_name` | Launch app by package or search by name |
-| `install-apk.sh` | `path/to/file.apk` | Install APK to device |
+| `launch-app.sh` | `[-s serial] package_or_name` | Launch app by package or search by name |
+| `install-apk.sh` | `[-s serial] path/to/file.apk` | Install APK to device |
 
 ## Action Guidelines
 
@@ -163,13 +207,17 @@ scripts/launch-app.sh "Chrome"
 - Press home and reopen the app
 - Or force close and restart
 
-## Example Session
+## Example Sessions
+
+### Single Device
 
 **User request:** "Open Chrome and search for weather"
 
 ```
 1. scripts/check-device.sh
-   → Device connected: Pixel 6a
+   → Device connected: Pixel 6
+   → Serial: 1A051FDF6007PA
+   → Type: Physical
 
 2. scripts/launch-app.sh com.android.chrome
    → Chrome launched
@@ -196,6 +244,34 @@ scripts/launch-app.sh "Chrome"
    → Task complete!
 ```
 
+### Multiple Devices
+
+**User request:** "Open Settings on my phone" (with emulator also running)
+
+```
+1. scripts/check-device.sh
+   → Multiple devices connected (2):
+   →   [PHYSICAL] 1A051FDF6007PA - Pixel 6
+   →   [EMULATOR] emulator-5554 - sdk_gphone64_arm64
+
+   User said "my phone" → target the PHYSICAL device
+   Serial to use: 1A051FDF6007PA
+
+2. scripts/check-device.sh -s 1A051FDF6007PA
+   → Device connected: Pixel 6
+   → Serial: 1A051FDF6007PA
+   → Type: Physical
+   → Status: Ready
+
+3. scripts/launch-app.sh -s 1A051FDF6007PA settings
+   → Resolved 'settings' to package: com.android.settings
+   → Launched: com.android.settings
+
+4. scripts/get-screen.sh -s 1A051FDF6007PA
+   → [Read XML, verify Settings app is open]
+   → Task complete!
+```
+
 ## Tips
 
 - **Be patient** - Android UI can be slow, wait between actions
@@ -203,3 +279,5 @@ scripts/launch-app.sh "Chrome"
 - **Check your work** - Get screen after each action to verify state
 - **Use screenshots** - When XML doesn't give enough context
 - **Start simple** - Break complex tasks into small steps
+- **Multi-device** - Always check for multiple devices first; ask user if target is unclear
+- **Consistent serial** - Once you pick a device, use `-s <serial>` on ALL commands

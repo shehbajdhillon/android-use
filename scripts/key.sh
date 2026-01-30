@@ -1,12 +1,32 @@
 #!/bin/bash
 # Press a key on the Android device
+# Usage: key.sh [-s <serial>] <keyname>
+#   -s <serial>  Target specific device by serial number
 
 set -e
 
+# Parse arguments
+SERIAL=""
+ADB_CMD="adb"
+
+while getopts "s:" opt; do
+    case $opt in
+        s) SERIAL="$OPTARG" ;;
+        *) echo "Usage: key.sh [-s <serial>] <keyname>"; exit 1 ;;
+    esac
+done
+shift $((OPTIND - 1))
+
+# Build ADB command with optional serial
+if [ -n "$SERIAL" ]; then
+    ADB_CMD="adb -s $SERIAL"
+fi
+
 if [ $# -ne 1 ]; then
-    echo "Usage: key.sh <keyname>"
+    echo "Usage: key.sh [-s <serial>] <keyname>"
     echo "Keys: home, back, enter, recent, menu, search, power, volume_up, volume_down, tab, delete"
     echo "Example: key.sh home"
+    echo "Example: key.sh -s 1A051FDF6007PA back"
     exit 1
 fi
 
@@ -81,6 +101,6 @@ case "$keyname" in
         ;;
 esac
 
-adb shell input keyevent "$keycode"
+$ADB_CMD shell input keyevent "$keycode"
 
 echo "Pressed $keyname (keycode $keycode)"

@@ -1,19 +1,40 @@
 #!/bin/bash
 # Swipe in a direction on the Android device
+# Usage: swipe.sh [-s <serial>] <direction>
+#   -s <serial>  Target specific device by serial number
+#   direction: up, down, left, right
 
 set -e
 
+# Parse arguments
+SERIAL=""
+ADB_CMD="adb"
+
+while getopts "s:" opt; do
+    case $opt in
+        s) SERIAL="$OPTARG" ;;
+        *) echo "Usage: swipe.sh [-s <serial>] <direction>"; exit 1 ;;
+    esac
+done
+shift $((OPTIND - 1))
+
+# Build ADB command with optional serial
+if [ -n "$SERIAL" ]; then
+    ADB_CMD="adb -s $SERIAL"
+fi
+
 if [ $# -ne 1 ]; then
-    echo "Usage: swipe.sh <direction>"
+    echo "Usage: swipe.sh [-s <serial>] <direction>"
     echo "Directions: up, down, left, right"
     echo "Example: swipe.sh up"
+    echo "Example: swipe.sh -s emulator-5554 down"
     exit 1
 fi
 
 direction="$1"
 
 # Get screen dimensions
-screen_size=$(adb shell wm size | grep -oE '[0-9]+x[0-9]+' | head -1)
+screen_size=$($ADB_CMD shell wm size | grep -oE '[0-9]+x[0-9]+' | head -1)
 width=$(echo "$screen_size" | cut -d'x' -f1)
 height=$(echo "$screen_size" | cut -d'x' -f2)
 
@@ -64,6 +85,6 @@ case "$direction" in
         ;;
 esac
 
-adb shell input swipe "$x1" "$y1" "$x2" "$y2" "$duration"
+$ADB_CMD shell input swipe "$x1" "$y1" "$x2" "$y2" "$duration"
 
 echo "Swiped $direction (from $x1,$y1 to $x2,$y2)"

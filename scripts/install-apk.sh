@@ -1,11 +1,31 @@
 #!/bin/bash
 # Install an APK file to the Android device
+# Usage: install-apk.sh [-s <serial>] <path_to_apk>
+#   -s <serial>  Target specific device by serial number
 
 set -e
 
+# Parse arguments
+SERIAL=""
+ADB_CMD="adb"
+
+while getopts "s:" opt; do
+    case $opt in
+        s) SERIAL="$OPTARG" ;;
+        *) echo "Usage: install-apk.sh [-s <serial>] <path_to_apk>"; exit 1 ;;
+    esac
+done
+shift $((OPTIND - 1))
+
+# Build ADB command with optional serial
+if [ -n "$SERIAL" ]; then
+    ADB_CMD="adb -s $SERIAL"
+fi
+
 if [ $# -ne 1 ]; then
-    echo "Usage: install-apk.sh <path_to_apk>"
+    echo "Usage: install-apk.sh [-s <serial>] <path_to_apk>"
     echo "Example: install-apk.sh /path/to/app.apk"
+    echo "Example: install-apk.sh -s emulator-5554 /path/to/app.apk"
     exit 1
 fi
 
@@ -32,7 +52,7 @@ echo ""
 # -r: replace existing application
 # -t: allow test packages
 # -d: allow version code downgrade
-result=$(adb install -r "$apk_path" 2>&1)
+result=$($ADB_CMD install -r "$apk_path" 2>&1)
 
 if echo "$result" | grep -q "Success"; then
     echo "Installation successful!"
