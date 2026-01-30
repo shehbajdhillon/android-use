@@ -33,50 +33,49 @@ fi
 
 app="$1"
 
-# Common app package mappings
-declare -A common_apps=(
-    ["chrome"]="com.android.chrome"
-    ["settings"]="com.android.settings"
-    ["phone"]="com.android.dialer"
-    ["dialer"]="com.android.dialer"
-    ["messages"]="com.google.android.apps.messaging"
-    ["sms"]="com.google.android.apps.messaging"
-    ["camera"]="com.android.camera"
-    ["photos"]="com.google.android.apps.photos"
-    ["gmail"]="com.google.android.gm"
-    ["maps"]="com.google.android.apps.maps"
-    ["youtube"]="com.google.android.youtube"
-    ["play store"]="com.android.vending"
-    ["playstore"]="com.android.vending"
-    ["calendar"]="com.google.android.calendar"
-    ["clock"]="com.google.android.deskclock"
-    ["calculator"]="com.google.android.calculator"
-    ["contacts"]="com.android.contacts"
-    ["files"]="com.google.android.documentsui"
-    ["whatsapp"]="com.whatsapp"
-    ["instagram"]="com.instagram.android"
-    ["facebook"]="com.facebook.katana"
-    ["twitter"]="com.twitter.android"
-    ["x"]="com.twitter.android"
-    ["spotify"]="com.spotify.music"
-    ["netflix"]="com.netflix.mediaclient"
-    ["telegram"]="org.telegram.messenger"
-    ["discord"]="com.discord"
-    ["slack"]="com.Slack"
-    ["zoom"]="us.zoom.videomeetings"
-    ["teams"]="com.microsoft.teams"
-    ["outlook"]="com.microsoft.office.outlook"
-    ["drive"]="com.google.android.apps.docs"
-    ["keep"]="com.google.android.keep"
-    ["notes"]="com.google.android.keep"
-)
-
 # Convert to lowercase for matching
 app_lower=$(echo "$app" | tr '[:upper:]' '[:lower:]')
 
+# Map common app names to package names
+get_package() {
+    case "$1" in
+        chrome) echo "com.android.chrome" ;;
+        settings) echo "com.android.settings" ;;
+        phone|dialer) echo "com.android.dialer" ;;
+        messages|sms) echo "com.google.android.apps.messaging" ;;
+        camera) echo "com.android.camera" ;;
+        photos) echo "com.google.android.apps.photos" ;;
+        gmail) echo "com.google.android.gm" ;;
+        maps) echo "com.google.android.apps.maps" ;;
+        youtube) echo "com.google.android.youtube" ;;
+        playstore|play_store) echo "com.android.vending" ;;
+        calendar) echo "com.google.android.calendar" ;;
+        clock) echo "com.google.android.deskclock" ;;
+        calculator) echo "com.google.android.calculator" ;;
+        contacts) echo "com.android.contacts" ;;
+        files) echo "com.google.android.documentsui" ;;
+        whatsapp) echo "com.whatsapp" ;;
+        instagram) echo "com.instagram.android" ;;
+        facebook) echo "com.facebook.katana" ;;
+        twitter|x) echo "com.twitter.android" ;;
+        spotify) echo "com.spotify.music" ;;
+        netflix) echo "com.netflix.mediaclient" ;;
+        telegram) echo "org.telegram.messenger" ;;
+        discord) echo "com.discord" ;;
+        slack) echo "com.Slack" ;;
+        zoom) echo "us.zoom.videomeetings" ;;
+        teams) echo "com.microsoft.teams" ;;
+        outlook) echo "com.microsoft.office.outlook" ;;
+        drive) echo "com.google.android.apps.docs" ;;
+        keep|notes) echo "com.google.android.keep" ;;
+        *) echo "" ;;
+    esac
+}
+
 # Check if it's a known app name
-if [ -n "${common_apps[$app_lower]}" ]; then
-    package="${common_apps[$app_lower]}"
+package=$(get_package "$app_lower")
+
+if [ -n "$package" ]; then
     echo "Resolved '$app' to package: $package"
 elif [[ "$app" == *"."* ]]; then
     # Looks like a package name (contains dots)
@@ -86,7 +85,7 @@ else
     echo "Searching for app: $app"
 
     # Get list of installed packages and their labels
-    matches=$($ADB_CMD shell pm list packages -f 2>/dev/null | grep -i "$app" | head -5)
+    matches=$($ADB_CMD shell pm list packages 2>/dev/null | grep -i "$app" | head -5)
 
     if [ -z "$matches" ]; then
         echo "Error: Could not find app '$app'"
@@ -96,11 +95,12 @@ else
         echo ""
         echo "Or use one of these common app names:"
         echo "  chrome, settings, messages, camera, photos, gmail, maps, youtube"
+        echo "  instagram, whatsapp, facebook, twitter, spotify, telegram, discord"
         exit 1
     fi
 
     # Extract first matching package
-    package=$(echo "$matches" | head -1 | sed 's/package://' | sed 's/=.*//' | rev | cut -d'/' -f1 | rev)
+    package=$(echo "$matches" | head -1 | sed 's/package://')
 
     if [ -z "$package" ]; then
         echo "Error: Could not parse package from matches"
@@ -112,7 +112,7 @@ else
     echo "Found package: $package"
 fi
 
-# Try to get the main activity using monkey
+# Launch the app
 echo "Launching $package..."
 
 # Method 1: Use monkey to launch (most reliable)
